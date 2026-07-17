@@ -6,17 +6,27 @@ import os
 # Set page configuration
 st.set_page_config(page_title="Score Predictor", layout="centered")
 
-# Load the trained model safely using absolute paths
+# Load the trained model safely
 @st.cache_resource
 def load_model():
-    # Get the directory where app.py is located
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    # Create the full path to model.pkl
     model_path = os.path.join(base_dir, 'model.pkl')
     
+    # Debugging check if the file doesn't exist
+    if not os.path.exists(model_path):
+        st.error("### ❌ File Not Found Error")
+        st.write(f"The app looked for `model.pkl` at: `{model_path}` but couldn't find it.")
+        
+        # List files to see what actually uploaded
+        files_in_repo = os.listdir(base_dir)
+        st.info(f"**Current files detected in your GitHub folder:** {files_in_repo}")
+        st.warning("Please make sure `model.pkl` is spelled correctly (all lowercase) and successfully pushed to GitHub.")
+        st.stop()
+        
     with open(model_path, 'rb') as file:
         return pickle.load(file)
 
+# Call the model loading function
 model = load_model()
 
 # Header
@@ -35,11 +45,6 @@ st.markdown("---")
 
 # Prediction button
 if st.button("Predict Score", type="primary", use_container_width=True):
-    # The input array must match the exact order of features during training
     features = np.array([[hours_studied, sleep_hours, attendance_percent, previous_scores]])
-    
-    # Generate prediction
     prediction = model.predict(features)
-    
-    # Display result
     st.success(f"**Predicted Result:** {prediction[0]:.2f}")
